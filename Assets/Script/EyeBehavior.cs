@@ -4,56 +4,51 @@ using UnityEngine;
 
 public class EyeBehavior : MonoBehaviour
 {
-    // Reference to the player object
-    private Transform Rocket;
+    // The speed of the eye
+    public float speed = 3f;
 
-    // The force applied to the Eyes to move towards the player
-    public float attractionForce = 10f;
+    // The Rocket object to follow
+    private GameObject rocket;
 
-    // The range at which the Eyes are attracted to the player
-    public float attractionRange = 10f;
-
-    // The maximum number of Eyes that can be attracted to the player at once
-    public int maxAttractionCount = 5;
-
-    // The radius of the circle within which the Eyes are spawned around the Mouth
-    public float spawnRadius = 1f;
-
-    // The number of Eyes to spawn
-    public int spawnCount = 10;
-
-    // Reference to the Eye prefab
-    public GameObject eyePrefab;
-
-    // List to store the references to the spawned Eyes
-    private List<GameObject> spawnedEyes = new List<GameObject>();
+    // The Rigidbody2D component of the eye
+    private Rigidbody2D rb;
 
     void Start()
     {
-        // Spawn Eyes around the Mouth
-        for (int i = 0; i < spawnCount; i++)
+        // Get a reference to the Rocket object
+        rocket = GameObject.Find("Rocket");
+
+        // Get the Rigidbody2D component
+        rb = GetComponent<Rigidbody2D>();
+    }
+
+    void FixedUpdate()
+    {
+        if (rocket != null)
         {
-            Vector2 spawnPosition = (Vector2)transform.position + Random.insideUnitCircle * spawnRadius;
-            GameObject eye = Instantiate(eyePrefab, spawnPosition, Quaternion.identity);
-            spawnedEyes.Add(eye);
+            // Calculate the direction to the Rocket
+            Vector2 direction = rocket.transform.position - transform.position;
+
+            // Normalize the direction vector
+            direction.Normalize();
+
+            // Move the eye in the direction of the Rocket
+            rb.MovePosition(rb.position + direction * speed * Time.fixedDeltaTime);
         }
     }
 
-    void Update()
+    void OnTriggerEnter2D(Collider2D other)
     {
-        // Attract Eyes towards the player
-        int attractedCount = 0;
-        foreach (GameObject eye in spawnedEyes)
+        if (other.gameObject.tag == "Player")
         {
-            if (attractedCount >= maxAttractionCount) break;
+            // Deal damage to the player
+            other.gameObject.GetComponent<RocketHealth>().TakeDamage(10);
 
-            Vector2 attractionDirection = Rocket.position - eye.transform.position;
-            float distance = attractionDirection.magnitude;
-            if (distance <= attractionRange)
-            {
-                eye.GetComponent<Rigidbody2D>().AddForce(attractionDirection.normalized * attractionForce);
-                attractedCount++;
-            }
+            // Destroy the eye
+            Destroy(gameObject);
         }
+
+        // Debug statement to check if method is being called
+        Debug.Log("Trigger detected!");
     }
 }
